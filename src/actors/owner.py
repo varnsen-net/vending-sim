@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
-from random import choice
+from random import choice, randint
 
 import gevent
 from loguru import logger
@@ -37,9 +37,9 @@ class Owner(BaseActor):
             logger.error(f"Owner {self.name} received a non-Email message: {incoming}")
             return
 
-        if incoming.sender == "simulator" and incoming.content == "TICK":
+        if incoming.sender == "simulator" and incoming.content == "START":
             all_actors: list[BaseActor] = self.registry.get_by_type(Owner)
-            send_to: Owner = choice(all_actors)
+            send_to: Owner = choice([a for a in all_actors if a.name != self.name])
             outgoing: Email = Email(
                 to=send_to.name,
                 sender=self.name,
@@ -59,4 +59,4 @@ class Owner(BaseActor):
             )
             send_to: Owner | None = self.registry.get_by_name(incoming.sender)
             self.postoffice.send_mail(outgoing, send_to)
-            gevent.sleep(6.9)
+            gevent.sleep(randint(1, 20))

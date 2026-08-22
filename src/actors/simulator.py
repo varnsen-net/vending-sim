@@ -30,17 +30,25 @@ class Simulator(BaseActor):
         don't want it to broadcast too frequently. So we use randrange(n) to effectively sleep
         for n seconds (on average). The stochasticity of this approach is an added bonus.
         """
+        gevent.sleep(2) # Give the other actors a chance to spin up and register before broadcasting
         try:
             all_owners: list[Owner] = self.registry.get_by_type(Owner)
             outgoing: Email = Email(
                 to="Owners",
                 sender=self.name,
                 actor_type=self.__class__.__name__,
-                content="TICK"
+                content="START"
             )
             self.postoffice.send_mail(outgoing, all_owners)
             while not self.retire.is_set() and not self.shutdown.is_set():
-                if randrange(600) == 0:
+                all_owners: list[Owner] = self.registry.get_by_type(Owner)
+                outgoing: Email = Email(
+                    to="Owners",
+                    sender=self.name,
+                    actor_type=self.__class__.__name__,
+                    content="TICK"
+                )
+                if randrange(60) == 0:
                     self.postoffice.send_mail(outgoing, all_owners)
                 gevent.sleep(1)
         finally:

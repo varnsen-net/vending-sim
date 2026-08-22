@@ -8,7 +8,8 @@ from src.actors.actor import BaseActor
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from src.registry import Registry
-    from src.types import Email
+    from src.log import Log
+    from src.structs import Email
 
 
 class PostOffice:

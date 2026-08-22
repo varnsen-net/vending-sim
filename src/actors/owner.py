@@ -7,7 +7,7 @@ import gevent
 from loguru import logger
 
 from src.actors.actor import BaseActor
-from src.types import Email
+from src.structs import Email
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

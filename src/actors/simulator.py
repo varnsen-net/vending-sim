@@ -8,7 +8,7 @@ import gevent
 
 from src.actors.actor import BaseActor
 from src.actors.owner import Owner
-from src.types import Email
+from src.structs import Email
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

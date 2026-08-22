@@ -12,6 +12,9 @@ from src.registry import Registry
 from src.actors.simulator import Simulator
 from src.actors.owner import Owner
 from src.llm import LLM
+from src.postoffice import PostOffice
+from src.log import Log
+from src.display import show_email
 from src.config import AppSettings
 
 from typing import TYPE_CHECKING
@@ -43,18 +46,20 @@ def create_register_start(
 
 if __name__ == "__main__":
     config: AppSettings = AppSettings()
+    registry: Registry = Registry()
     shutdown_event: Event = Event()
     llm: LLM = LLM(config.llm_model, config.llm_api_key)
+    log: Log = Log()
+    postoffice: PostOffice = PostOffice(registry, log, show_email)
 
     gevent.signal_handler(signal.SIGTERM, handle_signal, shutdown_event)
     gevent.signal_handler(signal.SIGINT, handle_signal, shutdown_event)
 
-    registry: Registry = Registry()
     actors: list[BaseActor] = [
-        create_register_start(Owner, "Art Vandelay", registry, shutdown_event, llm),
-        create_register_start(Owner, "Kel Varnsen", registry, shutdown_event, llm),
-        create_register_start(Owner, "H.E. Pennypacker", registry, shutdown_event, llm),
-        create_register_start(Simulator, "simulator", registry, shutdown_event),
+        create_register_start(Owner, "Art Vandelay", registry, shutdown_event, llm, postoffice),
+        create_register_start(Owner, "Kel Varnsen", registry, shutdown_event, llm, postoffice),
+        create_register_start(Owner, "H.E. Pennypacker", registry, shutdown_event, llm, postoffice),
+        create_register_start(Simulator, "simulator", registry, shutdown_event, postoffice),
     ]
 
     gevent.joinall(actors, raise_error=True)

@@ -15,21 +15,32 @@ class Registry:
 
     def register(self, actor: BaseActor):
         """Add an actor to the registry."""
+        logger.info(f"Registering actor: {actor.name}")
         self.actors[actor.name] = actor
-        logger.info(f"Registered actor: {actor.name}")
 
     def unregister(self, actor: BaseActor):
         """Remove an actor from the registry."""
-        del self.actors[actor.name]
-        logger.info(f"Unregistered actor: {actor.name}")
+        logger.info(f"Unregistering actor: {actor.name}")
+        try:
+            del self.actors[actor.name]
+        except KeyError:
+            logger.warning(f"Attempted to unregister non-existent actor: {actor.name}")
 
-    def all(self) -> list[BaseActor]:
+    def all_actors(self) -> list[BaseActor]:
         """Return a list of all registered actors."""
         return list(self.actors.values())
 
-    def get_by_name(self, name: str) -> BaseActor:
+    def all_names(self) -> list[str]:
+        """Return a list of all registered actor names."""
+        return list(self.actors.keys())
+
+    def get_by_name(self, name: str) -> BaseActor | None:
         """Fetch an actor by name."""
-        return self.actors[name]
+        try:
+            return self.actors[name]
+        except KeyError:
+            logger.warning(f"No actor with name '{name}' found in registry.")
+            return None
 
     def get_by_type(self, cls: type) -> list[BaseActor]:
         """Fetch all actors of a specific type."""

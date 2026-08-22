@@ -7,25 +7,21 @@ from loguru import logger
 import gevent
 
 from src.actors.actor import BaseActor
+from src.actors.owner import Owner
 from src.types import Email
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from gevent.event import Event
     from src.registry import Registry
+    from src.postoffice import PostOffice
 
 
 class Simulator(BaseActor):
 
-    def __init__(self, name: str, registry: Registry, shutdown: Event):
+    def __init__(self, name: str, registry: Registry, shutdown: Event, postoffice: PostOffice):
         BaseActor.__init__(self, name, registry, shutdown)
-
-    def broadcast(self, email: Email):
-        """Broadcast an email message to all actors."""
-        logger.debug(f"Broadcasting email: {email.content}")
-        for actor in self.registry.all():
-            if actor.name != self.name:
-                actor.inbox.put(email)
+        self.postoffice: PostOffice = postoffice
 
     def _run(self):
         """Run the simulation process.
@@ -35,16 +31,17 @@ class Simulator(BaseActor):
         for n seconds (on average). The stochasticity of this approach is an added bonus.
         """
         try:
-            email = Email(
-                to="all",
+            all_owners: list[Owner] = self.registry.get_by_type(Owner)
+            outgoing: Email = Email(
+                to="Owners",
                 sender=self.name,
                 actor_type=self.__class__.__name__,
-                content="Act now!"
+                content="TICK"
             )
-            self.broadcast(email)
+            self.postoffice.send_mail(outgoing, all_owners)
             while not self.retire.is_set() and not self.shutdown.is_set():
                 if randrange(600) == 0:
-                    self.broadcast(email)
+                    self.postoffice.send_mail(outgoing, all_owners)
                 gevent.sleep(1)
         finally:
             logger.info(f"Actor {self.name} shutting down.")

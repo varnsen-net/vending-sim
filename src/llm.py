@@ -17,7 +17,7 @@ class LLM:
         self.client: genai.Client = genai.Client(api_key=llm_api_key.get_secret_value())
 
     def fetch_llm_response(self, sys_msg: str, message: str) -> str:
-        """"""
+        """Fetches a response from the LLM model with retry logic in case of failure."""
         n = 3
         for attempt in range(n):
             try:

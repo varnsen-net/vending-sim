@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from gevent.event import Event
     from src.registry import Registry
     from src.llm import LLM
+    from src.postoffice import PostOffice
 
 
 class Owner(BaseActor):
@@ -23,30 +24,31 @@ class Owner(BaseActor):
         name: str,
         registry: Registry,
         shutdown: Event,
-        llm: LLM
+        llm: LLM,
+        postoffice: PostOffice,
     ):
         BaseActor.__init__(self, name, registry, shutdown)
         self.llm: LLM = llm
+        self.postoffice: PostOffice = postoffice
 
     def handle(self, incoming: Email):
         """Handle an incoming message."""
-        if incoming.sender == "simulator" and incoming.content == "Act now!":
-            all_actors: list[BaseActor] = [
-                a for a in self.registry.get_by_type(BaseActor)
-                if a.name != self.name
-            ]
-            send_to: BaseActor = choice(all_actors)
+        if type(incoming) is not Email:
+            logger.error(f"Owner {self.name} received a non-Email message: {incoming}")
+            return
+
+        if incoming.sender == "simulator" and incoming.content == "TICK":
+            all_actors: list[BaseActor] = self.registry.get_by_type(Owner)
+            send_to: Owner = choice(all_actors)
             outgoing: Email = Email(
                 to=send_to.name,
                 sender=self.name,
                 actor_type=self.__class__.__name__,
                 content="Hey bb <3"
             )
-            send_to.inbox.put(outgoing)
+            self.postoffice.send_mail(outgoing, send_to)
 
         if incoming.actor_type == "Owner":
-            print(f"{incoming.sender} --> {incoming.to}")
-            print(f"{incoming.content}\n")
             sys_msg: str = "lol. lmao, even."
             response: str = self.llm.fetch_llm_response(sys_msg, incoming.content)
             outgoing: Email = Email(
@@ -55,5 +57,6 @@ class Owner(BaseActor):
                 actor_type=self.__class__.__name__,
                 content=response
             )
-            self.registry.get_by_name(incoming.sender).inbox.put(outgoing)
-            gevent.sleep(5)
+            send_to: Owner | None = self.registry.get_by_name(incoming.sender)
+            self.postoffice.send_mail(outgoing, send_to)
+            gevent.sleep(6.9)

@@ -71,5 +71,4 @@ def show_email(email: Email, webhook_url: SecretStr) -> None:
         "avatar_url": avatars.get(email.sender),
     }
     sleep(uniform(0.5, 1.5))  # Random delay to avoid rate limiting
-    # response = request_with_retries(webhook_url.get_secret_value(), params)
-    print(params)
+    response = request_with_retries(webhook_url.get_secret_value(), params)

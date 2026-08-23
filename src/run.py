@@ -48,17 +48,18 @@ if __name__ == "__main__":
     config: AppSettings = AppSettings()
     registry: Registry = Registry()
     shutdown_event: Event = Event()
-    llm: LLM = LLM(config.llm_model, config.llm_api_key)
+    llm: LLM = LLM(config.llm)
     log: Log = Log()
-    postoffice: PostOffice = PostOffice(registry, log, show_email)
+    postoffice: PostOffice = PostOffice(registry, log, show_email, config.webhook_url)
 
     gevent.signal_handler(signal.SIGTERM, handle_signal, shutdown_event)
     gevent.signal_handler(signal.SIGINT, handle_signal, shutdown_event)
 
     actors: list[BaseActor] = [
-        create_register_start(Owner, "Art Vandelay", registry, shutdown_event, llm, postoffice),
-        create_register_start(Owner, "Kel Varnsen", registry, shutdown_event, llm, postoffice),
-        create_register_start(Owner, "H.E. Pennypacker", registry, shutdown_event, llm, postoffice),
+        create_register_start(Owner, "Art Vandelay", registry, shutdown_event, llm, postoffice, log),
+        create_register_start(Owner, "Kel Varnsen", registry, shutdown_event, llm, postoffice, log),
+        create_register_start(Owner, "H.E. Pennypacker", registry, shutdown_event, llm, postoffice, log),
+        create_register_start(Owner, "Paloma", registry, shutdown_event, llm, postoffice, log),
         create_register_start(Simulator, "simulator", registry, shutdown_event, postoffice),
     ]
 

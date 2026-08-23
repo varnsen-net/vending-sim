@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
-from random import randrange
+from random import randrange, choice
 
 from loguru import logger
 import gevent
@@ -42,14 +42,15 @@ class Simulator(BaseActor):
             self.postoffice.send_mail(outgoing, all_owners)
             while not self.retire.is_set() and not self.shutdown.is_set():
                 all_owners: list[Owner] = self.registry.get_by_type(Owner)
+                some_owners: list[Owner] = [o for o in all_owners if choice([True, False])]
                 outgoing: Email = Email(
                     to="Owners",
                     sender=self.name,
                     actor_type=self.__class__.__name__,
                     content="TICK"
                 )
-                if randrange(60) == 0:
-                    self.postoffice.send_mail(outgoing, all_owners)
+                if randrange(120) == 0:
+                    self.postoffice.send_mail(outgoing, some_owners)
                 gevent.sleep(1)
         finally:
             logger.info(f"Actor {self.name} shutting down.")

@@ -7,6 +7,7 @@ from src.actors.actor import BaseActor
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
+    from pydantic import SecretStr
     from src.registry import Registry
     from src.log import Log
     from src.structs import Email
@@ -14,10 +15,11 @@ if TYPE_CHECKING:
 
 class PostOffice:
 
-    def __init__(self, registry: Registry, log: Log, display: Callable):
+    def __init__(self, registry: Registry, log: Log, display: Callable, webhook_url: SecretStr):
         self.registry = registry
         self.log: Log = log
         self.display: Callable = display
+        self.webhook_url: SecretStr = webhook_url
 
     def send_mail(
         self,
@@ -38,7 +40,10 @@ class PostOffice:
             if actor.name not in all_names:
                 logger.warning(f"Recipient {actor.name} not found in registry. Email not sent.")
                 continue
-            if actor.name != email.sender:
-                actor.inbox.put(email)
+            if actor.name == email.sender:
+                continue
+            actor.inbox.put(email)
+
+            if email.sender != "simulator":
                 self.log.add_email(email)
-                self.display(email)
+                self.display(email, self.webhook_url)

@@ -4,6 +4,8 @@ from pathlib import Path
 from pydantic import Field, SecretStr, BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from src.vending import Item
+
 
 PROJ_ROOT = Path(__file__).resolve().parents[1]
 
@@ -14,15 +16,16 @@ class LLMConfig(BaseModel):
     model: str = "ministral-14b-latest"
     temperature: float = 0.7
     sys_msg: str = """
-    You are a sitcom writer. Given a script in progress, your task is to write the next line of dialogue.
-    These are lines of dialogue for a sitcom, so they should generally be short and quippy.
-
-    Don't simply parrot what other characters have said. Move the conversation forward.
-
-    Do not prepend anything to your responses.
-    Do not put your responses in quotes.
-    Just respond with a line of dialogue.
+        You are a business owner who operates a vending machine.
     """
+
+
+class SimulationConfig(BaseModel):
+    """"""
+    tick_interval: int = Field(
+        default=5,
+        description="Time interval (in seconds) between simulation ticks.",
+    )
 
 
 class AppSettings(BaseSettings):
@@ -45,6 +48,6 @@ class AppSettings(BaseSettings):
     )
 
     project_root: Path = PROJ_ROOT
-    llm: LLMConfig = Field(default_factory=LLMConfig)
     webhook_url: SecretStr = Field(description="Webhook URL for Discord.") 
-
+    llm: LLMConfig = Field(default_factory=LLMConfig)
+    simulation: SimulationConfig = Field(default_factory=SimulationConfig)

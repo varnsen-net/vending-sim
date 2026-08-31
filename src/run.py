@@ -3,6 +3,7 @@ from __future__ import annotations
 from gevent import monkey; monkey.patch_all() # this must always be the first import
 
 import signal
+from dataclasses import dataclass
 
 import gevent
 from gevent.event import Event
@@ -11,6 +12,7 @@ from loguru import logger
 from src.registry import Registry
 from src.actors.simulator import Simulator
 from src.actors.owner import Owner
+from src.vending import Product, VendingMachine
 from src.llm import LLM
 from src.postoffice import PostOffice
 from src.log import Log
@@ -55,12 +57,42 @@ if __name__ == "__main__":
     gevent.signal_handler(signal.SIGTERM, handle_signal, shutdown_event)
     gevent.signal_handler(signal.SIGINT, handle_signal, shutdown_event)
 
-    actors: list[BaseActor] = [
-        create_register_start(Owner, "Art Vandelay", registry, shutdown_event, llm, postoffice, log),
-        create_register_start(Owner, "Kel Varnsen", registry, shutdown_event, llm, postoffice, log),
-        create_register_start(Owner, "H.E. Pennypacker", registry, shutdown_event, llm, postoffice, log),
-        create_register_start(Owner, "Paloma", registry, shutdown_event, llm, postoffice, log),
-        create_register_start(Simulator, "simulator", registry, shutdown_event, postoffice),
+    actors: list[BaseActor] = []
+
+    owners = [
+        "Art Vandelay",
+        "Kel Varnsen",
+        "H.E. Pennypacker",
+        "Paloma",
     ]
+    products = [
+        Product(name="Soda", appeal=1.0),
+        Product(name="Chips", appeal=1.0),
+        Product(name="Candy", appeal=1.0),
+    ]
+
+    for owner in owners:
+        vending_machine = VendingMachine(products)
+        actor: BaseActor = create_register_start(
+            Owner,
+            owner,
+            registry,
+            shutdown_event,
+            llm,
+            postoffice,
+            [vending_machine]
+        )
+        actors.append(actor)
+
+    sim: BaseActor = create_register_start(
+        Simulator,
+        "simulator",
+        registry,
+        shutdown_event,
+        postoffice,
+        products,
+        config.simulation.tick_interval
+    )
+    actors.append(sim)
 
     gevent.joinall(actors, raise_error=True)

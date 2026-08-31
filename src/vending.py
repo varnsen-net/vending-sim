@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -22,6 +22,7 @@ class Item:
 @dataclass
 class VendingMachine:
     products: list[Product]
+    items: list[Item] = field(init=False)
 
     def __post_init__(self):
         self.items: list[Item] = [Item(product.name) for product in self.products]
